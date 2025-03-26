@@ -15,10 +15,12 @@ class ResumeParser:
         # Load spaCy language model
         try:
             self.nlp = spacy.load("en_core_web_sm")
+            print("spaCy language model loaded successfully!")
         except OSError:
             print("Downloading spaCy language model...")
             spacy.cli.download("en_core_web_sm")
             self.nlp = spacy.load("en_core_web_sm")
+            print("spaCy language model downloaded and loaded successfully!")
 
     def parse_resume(self, resume_text: str) -> Dict[str, Any]:
         """

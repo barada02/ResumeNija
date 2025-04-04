@@ -38,26 +38,27 @@ class ResumeParser:
 
     def _extract_personal_info(self, resume_text: str) -> Dict[str, str]:
         """
-        Extract personal information from resume
+        Extract personal information from resume 
         """
         # Email extraction
         email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
         emails = re.findall(email_pattern, resume_text)
-        
-        # Phone number extraction
-        phone_pattern = r'(\+\d{1,2}\s?)?(\d{3}[-.]?)?\s?\d{3}[-.]?\d{4}'
-        phones = re.findall(phone_pattern, resume_text)
-        
+        # Phone number extraction (flexible format)
+        phone_pattern = r'(\+?\d{1,3})?[-\s.]?(\d{3})[-\s.]?(\d{3})[-\s.]?(\d{4})'
+        phone_match = re.search(phone_pattern, resume_text)
+        if phone_match:
+            phones = ''.join(phone_match.groups())
+        else:
+            phones = None
         # Name extraction (using spaCy)
         doc = self.nlp(resume_text)
         names = [ent.text for ent in doc.ents if ent.label_ == "PERSON"]
-        
         return {
             "name": names[0] if names else None,
             "email": emails[0] if emails else None,
-            "phone": phones[0][0] if phones else None,
+            "phone": phones,
             "location": self._extract_location(resume_text)
-        }
+            }
 
     def _extract_skills(self, resume_text: str) -> List[str]:
         """
@@ -135,15 +136,19 @@ class ResumeParser:
         cert_pattern = r'- (.*?Certified.*)'
         certifications = re.findall(cert_pattern, resume_text)
         return certifications
-
+   
     def _extract_location(self, resume_text: str) -> str:
         """
-        Extract location from resume
+        Extract location from the first line
+        Expected format: Name | Location | Phone | Email
         """
-        # Simple location extraction
-        location_pattern = r'^(.*?)\s*\|'
-        locations = re.findall(location_pattern, resume_text, re.MULTILINE)
-        return locations[0].strip() if locations else None
+        lines = resume_text.strip().split('\n')
+        if lines:
+            parts = [p.strip() for p in lines[0].split('|')]
+            if len(parts) >= 2:
+                return parts[1]  # Assuming second item is location
+            return None
+
 
 def main():
     # Example usage
